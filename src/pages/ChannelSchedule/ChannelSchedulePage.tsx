@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchChannelSchedule, type ChannelScheduleItem } from "../../api/channelSchedule";
 import ChannelScheduleTable from "../../components/ChannelScheduleTable";
 import UserMenu from "../../components/UserMenu";
+import Accordion from "../../components/Accordion";
 import { calculateScheduleConflicts, type ConflictKey } from "../../utils/scheduleConflicts";
 import {
   fetchScheduleSettings,
@@ -342,28 +343,28 @@ const ChannelSchedulePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-8 md:px-6 lg:px-8">
+        {/* Header - адаптивный для мобильных */}
+        <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => navigate("/channels")}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-brand/40 hover:bg-slate-800/50"
+              className="flex min-h-[40px] items-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-brand/40 hover:bg-slate-800/50 sm:px-4"
             >
               <ArrowLeft className="h-4 w-4" />
-              К каналам
+              <span className="hidden sm:inline">К каналам</span>
             </button>
-            <h1 className="text-2xl font-bold text-white">Расписание каналов</h1>
+            <h1 className="text-xl font-bold text-white sm:text-2xl">Расписание каналов</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={loadSchedule}
               disabled={loading}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-brand/40 hover:bg-slate-800/50 disabled:opacity-50"
+              className="flex min-h-[40px] items-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-brand/40 hover:bg-slate-800/50 disabled:opacity-50 sm:px-4"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Обновить
+              <span className="hidden sm:inline">Обновить</span>
             </button>
             <UserMenu />
           </div>
@@ -394,229 +395,464 @@ const ChannelSchedulePage = () => {
           </div>
         ) : (
           <>
-            {/* Панель настроек конфликта расписания */}
-            <div className="mb-4 rounded-lg border border-white/10 bg-slate-900/60 p-4">
-              <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    Настройки проверки конфликтов расписания
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Эти настройки применяются ко всем каналам вашего аккаунта.
-                  </p>
-                </div>
-                <div className="flex flex-col items-start gap-3 md:flex-row md:items-center">
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={settingsDraft.conflictsCheckEnabled}
-                      onChange={(e) =>
-                        handleSettingsChange({
-                          conflictsCheckEnabled: e.target.checked
-                        })
-                      }
-                      disabled={settingsLoading || isSavingSettings}
-                      className="h-4 w-4 rounded border-white/20 bg-slate-950/60 text-brand focus:ring-2 focus:ring-brand/40"
-                    />
-                    <span>Проверять конфликты в расписании</span>
-                  </label>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-200">
-                      Минимальный интервал между публикациями (мин):
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={60}
-                      step={1}
-                      value={settingsDraft.minIntervalMinutes}
-                      onChange={(e) =>
-                        handleSettingsChange({
-                          minIntervalMinutes: Number(e.target.value) || 0
-                        })
-                      }
-                      disabled={settingsLoading || isSavingSettings}
-                      className="w-20 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-sm text-white outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:opacity-50"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSaveSettings}
-                    disabled={
-                      settingsLoading ||
-                      isSavingSettings ||
-                      settingsDraft.minIntervalMinutes < 1 ||
-                      settingsDraft.minIntervalMinutes > 60
-                    }
-                    className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
-                  >
-                    {isSavingSettings ? "Сохранение..." : "Сохранить"}
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-400">
-                Если разница между двумя публикациями меньше указанного количества минут, время
-                будет подсвечиваться красным.
-              </p>
-
-              {settingsError && (
-                <div className="mt-2 rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                  {settingsError}
-                </div>
-              )}
-
-              {settingsSuccessMessage && (
-                <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-                  {settingsSuccessMessage}
-                </div>
-              )}
-            </div>
-
-            {/* Баннер о конфликтах */}
-            {settings.conflictsCheckEnabled && conflicts.size > 0 && (
-              <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100">
-                <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-400" />
-                <div className="text-sm">
-                  <p className="font-medium">
-                    Обнаружены конфликты в расписании.
-                  </p>
-                  <p className="mt-1 text-amber-100/90">
-                    Некоторые публикации стоят ближе, чем через {settings.minIntervalMinutes}{" "}
-                    минут. Отредактируйте подсвеченные времена, если хотите избежать пересечений.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Панель свободных временных окон */}
-            <div className="mb-4 rounded-lg border border-white/10 bg-slate-900/60 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    Свободные окна для новых публикаций
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Показываются интервалы и возможные слоты с интервалом не менее{" "}
-                    {settings.minIntervalMinutes} минут от всех публикаций.
-                  </p>
-                </div>
-              </div>
-
-              {!settings.conflictsCheckEnabled ? (
-                <div className="mt-3 rounded border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
-                  Проверка конфликтов отключена. Включите её в настройках выше, чтобы увидеть
-                  свободные окна и предлагаемые слоты.
-                </div>
-              ) : freeRanges.length === 0 ? (
-                <div className="mt-3 rounded border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
-                  Свободных окон для новых публикаций не найдено с текущим интервалом.
-                </div>
-              ) : (
-                <div className="mt-3 space-y-4">
-                  {/* Диапазоны */}
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Свободные диапазоны
-                    </p>
-                    <div className="space-y-1 text-xs text-slate-200">
-                      {(showAllRanges ? freeRanges : freeRanges.slice(0, 10)).map(
-                        (range, idx) => {
-                          const length = range.endMinutes - range.startMinutes + 1;
-                          const maxSlots = Math.floor(
-                            length / Math.max(1, settings.minIntervalMinutes || 1)
-                          );
-                          const fromH = Math.floor(range.startMinutes / 60)
-                            .toString()
-                            .padStart(2, "0");
-                          const fromM = (range.startMinutes % 60)
-                            .toString()
-                            .padStart(2, "0");
-                          const toH = Math.floor(range.endMinutes / 60)
-                            .toString()
-                            .padStart(2, "0");
-                          const toM = (range.endMinutes % 60)
-                            .toString()
-                            .padStart(2, "0");
-
-                          return (
-                            <div
-                              key={`${range.startMinutes}-${range.endMinutes}-${idx}`}
-                              className="flex flex-wrap items-center gap-2 rounded bg-slate-900/80 px-3 py-1.5"
-                            >
-                              <span className="font-mono text-slate-100">
-                                {fromH}:{fromM} – {toH}:{toM}
-                              </span>
-                              <span className="text-slate-400">
-                                • {length} мин • до {maxSlots} публикаций
-                              </span>
-                            </div>
-                          );
-                        }
-                      )}
+            {/* Панель настроек конфликта расписания - аккордион на мобильных */}
+            <div className="mb-4 md:mb-4">
+              {/* Десктопная версия - без изменений */}
+              <div className="hidden md:block">
+                <div className="rounded-lg border border-white/10 bg-slate-900/60 p-4">
+                  <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        Настройки проверки конфликтов расписания
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Эти настройки применяются ко всем каналам вашего аккаунта.
+                      </p>
                     </div>
-                    {freeRanges.length > 10 && (
+                    <div className="flex flex-col items-start gap-3 md:flex-row md:items-center">
+                      <label className="inline-flex items-center gap-2 text-sm text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={settingsDraft.conflictsCheckEnabled}
+                          onChange={(e) =>
+                            handleSettingsChange({
+                              conflictsCheckEnabled: e.target.checked
+                            })
+                          }
+                          disabled={settingsLoading || isSavingSettings}
+                          className="h-4 w-4 rounded border-white/20 bg-slate-950/60 text-brand focus:ring-2 focus:ring-brand/40"
+                        />
+                        <span>Проверять конфликты в расписании</span>
+                      </label>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-slate-200">
+                          Минимальный интервал между публикациями (мин):
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={60}
+                          step={1}
+                          value={settingsDraft.minIntervalMinutes}
+                          onChange={(e) =>
+                            handleSettingsChange({
+                              minIntervalMinutes: Number(e.target.value) || 0
+                            })
+                          }
+                          disabled={settingsLoading || isSavingSettings}
+                          className="w-20 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-sm text-white outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:opacity-50"
+                        />
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setShowAllRanges((prev) => !prev)}
-                        className="mt-2 text-xs font-medium text-slate-300 underline underline-offset-2 hover:text-white"
+                        onClick={handleSaveSettings}
+                        disabled={
+                          settingsLoading ||
+                          isSavingSettings ||
+                          settingsDraft.minIntervalMinutes < 1 ||
+                          settingsDraft.minIntervalMinutes > 60
+                        }
+                        className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
                       >
-                        {showAllRanges ? "Свернуть" : "Показать ещё диапазоны"}
+                        {isSavingSettings ? "Сохранение..." : "Сохранить"}
                       </button>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Предлагаемые слоты */}
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Предлагаемые свободные слоты
-                    </p>
-                    {suggestedSlots.length === 0 ? (
-                      <p className="text-xs text-slate-400">
-                        Для текущих диапазонов не удалось сгенерировать слоты.
+                  <p className="text-xs text-slate-400">
+                    Если разница между двумя публикациями меньше указанного количества минут, время
+                    будет подсвечиваться красным.
+                  </p>
+
+                  {settingsError && (
+                    <div className="mt-2 rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                      {settingsError}
+                    </div>
+                  )}
+
+                  {settingsSuccessMessage && (
+                    <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                      {settingsSuccessMessage}
+                    </div>
+                  )}
+                </div>
+
+                {/* Баннер о конфликтах на десктопе */}
+                {settings.conflictsCheckEnabled && conflicts.size > 0 && (
+                  <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-400" />
+                    <div className="text-sm">
+                      <p className="font-medium">
+                        Обнаружены конфликты в расписании.
                       </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {suggestedSlots.map((slot) => {
-                          const labelMinutes = slot.minutes;
-                          const hh = Math.floor(labelMinutes / 60)
-                            .toString()
-                            .padStart(2, "0");
-                          const mm = (labelMinutes % 60).toString().padStart(2, "0");
-                          const label = `${hh}:${mm}`;
-                          return (
-                            <button
-                              key={slot.minutes}
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  await navigator.clipboard.writeText(label);
-                                  setCopiedSlot(label);
-                                  setTimeout(() => setCopiedSlot((prev) =>
-                                    prev === label ? null : prev
-                                  ), 2000);
-                                } catch {
-                                  // ignore
-                                }
-                              }}
-                              className="rounded-full border border-white/10 bg-slate-900 px-3 py-1 text-xs font-mono text-slate-100 transition hover:border-brand/60 hover:bg-brand/10 hover:text-white"
-                              title="Нажмите, чтобы скопировать время в буфер обмена"
-                            >
-                              {label}
-                            </button>
-                          );
-                        })}
+                      <p className="mt-1 text-amber-100/90">
+                        Некоторые публикации стоят ближе, чем через {settings.minIntervalMinutes}{" "}
+                        минут. Отредактируйте подсвеченные времена, если хотите избежать пересечений.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Мобильная версия - аккордион */}
+              <div className="md:hidden">
+                <Accordion
+                  title="Настройки проверки конфликтов"
+                  summary={
+                    settings.conflictsCheckEnabled && conflicts.size > 0
+                      ? `Есть ${conflicts.size} конфликт${conflicts.size > 1 ? "ов" : ""}`
+                      : settings.conflictsCheckEnabled
+                      ? "Проверка включена"
+                      : "Проверка отключена"
+                  }
+                  defaultOpen={false}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-slate-400">
+                        Эти настройки применяются ко всем каналам вашего аккаунта.
+                      </p>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-sm text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={settingsDraft.conflictsCheckEnabled}
+                        onChange={(e) =>
+                          handleSettingsChange({
+                            conflictsCheckEnabled: e.target.checked
+                          })
+                        }
+                        disabled={settingsLoading || isSavingSettings}
+                        className="h-4 w-4 rounded border-white/20 bg-slate-950/60 text-brand focus:ring-2 focus:ring-brand/40"
+                      />
+                      <span>Проверять конфликты в расписании</span>
+                    </label>
+
+                    <div className="flex flex-col gap-2 text-sm">
+                      <span className="text-slate-200">
+                        Минимальный интервал между публикациями (мин):
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={60}
+                        step={1}
+                        value={settingsDraft.minIntervalMinutes}
+                        onChange={(e) =>
+                          handleSettingsChange({
+                            minIntervalMinutes: Number(e.target.value) || 0
+                          })
+                        }
+                        disabled={settingsLoading || isSavingSettings}
+                        className="w-full rounded-lg border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:opacity-50"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveSettings}
+                      disabled={
+                        settingsLoading ||
+                        isSavingSettings ||
+                        settingsDraft.minIntervalMinutes < 1 ||
+                        settingsDraft.minIntervalMinutes > 60
+                      }
+                      className="w-full min-h-[40px] rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
+                    >
+                      {isSavingSettings ? "Сохранение..." : "Сохранить"}
+                    </button>
+
+                    <p className="text-xs text-slate-400">
+                      Если разница между двумя публикациями меньше указанного количества минут, время
+                      будет подсвечиваться красным.
+                    </p>
+
+                    {settingsError && (
+                      <div className="rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                        {settingsError}
                       </div>
                     )}
-                    {copiedSlot && (
-                      <p className="mt-2 text-xs text-emerald-300">
-                        Время {copiedSlot} скопировано. Вставьте его в нужное поле расписания.
-                      </p>
+
+                    {settingsSuccessMessage && (
+                      <div className="rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                        {settingsSuccessMessage}
+                      </div>
+                    )}
+
+                    {/* Баннер о конфликтах в мобильном аккордионе */}
+                    {settings.conflictsCheckEnabled && conflicts.size > 0 && (
+                      <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-100">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+                        <div className="text-xs">
+                          <p className="font-medium">
+                            Обнаружены конфликты в расписании.
+                          </p>
+                          <p className="mt-1 text-amber-100/90">
+                            Некоторые публикации стоят ближе, чем через {settings.minIntervalMinutes}{" "}
+                            минут. Отредактируйте подсвеченные времена, если хотите избежать пересечений.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Accordion>
+              </div>
+            </div>
+
+            {/* Панель свободных временных окон - аккордион на мобильных */}
+            {settings.conflictsCheckEnabled && (
+              <>
+                {/* Десктопная версия */}
+                <div className="mb-4 hidden md:block">
+                  <div className="rounded-lg border border-white/10 bg-slate-900/60 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Свободные окна для новых публикаций
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Показываются интервалы и возможные слоты с интервалом не менее{" "}
+                          {settings.minIntervalMinutes} минут от всех публикаций.
+                        </p>
+                      </div>
+                    </div>
+
+                    {freeRanges.length === 0 ? (
+                      <div className="mt-3 rounded border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
+                        Свободных окон для новых публикаций не найдено с текущим интервалом.
+                      </div>
+                    ) : (
+                      <div className="mt-3 space-y-4">
+                        {/* Диапазоны */}
+                        <div>
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Свободные диапазоны
+                          </p>
+                          <div className="space-y-1 text-xs text-slate-200">
+                            {(showAllRanges ? freeRanges : freeRanges.slice(0, 10)).map(
+                              (range, idx) => {
+                                const length = range.endMinutes - range.startMinutes + 1;
+                                const maxSlots = Math.floor(
+                                  length / Math.max(1, settings.minIntervalMinutes || 1)
+                                );
+                                const fromH = Math.floor(range.startMinutes / 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const fromM = (range.startMinutes % 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const toH = Math.floor(range.endMinutes / 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const toM = (range.endMinutes % 60)
+                                  .toString()
+                                  .padStart(2, "0");
+
+                                return (
+                                  <div
+                                    key={`${range.startMinutes}-${range.endMinutes}-${idx}`}
+                                    className="flex flex-wrap items-center gap-2 rounded bg-slate-900/80 px-3 py-1.5"
+                                  >
+                                    <span className="font-mono text-slate-100">
+                                      {fromH}:{fromM} – {toH}:{toM}
+                                    </span>
+                                    <span className="text-slate-400">
+                                      • {length} мин • до {maxSlots} публикаций
+                                    </span>
+                                  </div>
+                                );
+                              }
+                            )}
+                          </div>
+                          {freeRanges.length > 10 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllRanges((prev) => !prev)}
+                              className="mt-2 text-xs font-medium text-slate-300 underline underline-offset-2 hover:text-white"
+                            >
+                              {showAllRanges ? "Свернуть" : "Показать ещё диапазоны"}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Предлагаемые слоты */}
+                        <div>
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Предлагаемые свободные слоты
+                          </p>
+                          {suggestedSlots.length === 0 ? (
+                            <p className="text-xs text-slate-400">
+                              Для текущих диапазонов не удалось сгенерировать слоты.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {suggestedSlots.map((slot) => {
+                                const labelMinutes = slot.minutes;
+                                const hh = Math.floor(labelMinutes / 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const mm = (labelMinutes % 60).toString().padStart(2, "0");
+                                const label = `${hh}:${mm}`;
+                                return (
+                                  <button
+                                    key={slot.minutes}
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        await navigator.clipboard.writeText(label);
+                                        setCopiedSlot(label);
+                                        setTimeout(() => setCopiedSlot((prev) =>
+                                          prev === label ? null : prev
+                                        ), 2000);
+                                      } catch {
+                                        // ignore
+                                      }
+                                    }}
+                                    className="rounded-full border border-white/10 bg-slate-900 px-3 py-1 text-xs font-mono text-slate-100 transition hover:border-brand/60 hover:bg-brand/10 hover:text-white"
+                                    title="Нажмите, чтобы скопировать время в буфер обмена"
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {copiedSlot && (
+                            <p className="mt-2 text-xs text-emerald-300">
+                              Время {copiedSlot} скопировано. Вставьте его в нужное поле расписания.
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Мобильная версия - два отдельных аккордиона */}
+                <div className="mb-4 space-y-3 md:hidden">
+                  {/* Аккордион для свободных диапазонов */}
+                  {freeRanges.length > 0 && (
+                    <Accordion
+                      title={`Свободные окна для новых публикаций (${freeRanges.length} ${freeRanges.length === 1 ? "слот" : "слотов"})`}
+                      defaultOpen={false}
+                    >
+                      <div className="space-y-3">
+                        <p className="text-xs text-slate-400">
+                          Показываются интервалы и возможные слоты с интервалом не менее{" "}
+                          {settings.minIntervalMinutes} минут от всех публикаций.
+                        </p>
+                        <div>
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Свободные диапазоны
+                          </p>
+                          <div className="space-y-1 text-xs text-slate-200">
+                            {(showAllRanges ? freeRanges : freeRanges.slice(0, 10)).map(
+                              (range, idx) => {
+                                const length = range.endMinutes - range.startMinutes + 1;
+                                const maxSlots = Math.floor(
+                                  length / Math.max(1, settings.minIntervalMinutes || 1)
+                                );
+                                const fromH = Math.floor(range.startMinutes / 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const fromM = (range.startMinutes % 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const toH = Math.floor(range.endMinutes / 60)
+                                  .toString()
+                                  .padStart(2, "0");
+                                const toM = (range.endMinutes % 60)
+                                  .toString()
+                                  .padStart(2, "0");
+
+                                return (
+                                  <div
+                                    key={`${range.startMinutes}-${range.endMinutes}-${idx}`}
+                                    className="flex flex-wrap items-center gap-2 rounded bg-slate-900/80 px-3 py-1.5"
+                                  >
+                                    <span className="font-mono text-slate-100">
+                                      {fromH}:{fromM} – {toH}:{toM}
+                                    </span>
+                                    <span className="text-slate-400">
+                                      • {length} мин • до {maxSlots} публикаций
+                                    </span>
+                                  </div>
+                                );
+                              }
+                            )}
+                          </div>
+                          {freeRanges.length > 10 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllRanges((prev) => !prev)}
+                              className="mt-2 text-xs font-medium text-slate-300 underline underline-offset-2 hover:text-white"
+                            >
+                              {showAllRanges ? "Свернуть" : "Показать ещё диапазоны"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Accordion>
+                  )}
+
+                  {/* Аккордион для предлагаемых слотов */}
+                  {suggestedSlots.length > 0 && (
+                    <Accordion
+                      title={`Предлагаемые свободные слоты (${suggestedSlots.length} ${suggestedSlots.length === 1 ? "слот" : "слотов"})`}
+                      defaultOpen={false}
+                    >
+                      <div className="space-y-3">
+                        <div className="overflow-x-auto -mx-4 px-4">
+                          <div className="flex gap-1.5 pb-2">
+                            {suggestedSlots.map((slot) => {
+                              const labelMinutes = slot.minutes;
+                              const hh = Math.floor(labelMinutes / 60)
+                                .toString()
+                                .padStart(2, "0");
+                              const mm = (labelMinutes % 60).toString().padStart(2, "0");
+                              const label = `${hh}:${mm}`;
+                              return (
+                                <button
+                                  key={slot.minutes}
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await navigator.clipboard.writeText(label);
+                                      setCopiedSlot(label);
+                                      setTimeout(() => setCopiedSlot((prev) =>
+                                        prev === label ? null : prev
+                                      ), 2000);
+                                    } catch {
+                                      // ignore
+                                    }
+                                  }}
+                                  className="flex-shrink-0 rounded-full border border-white/10 bg-slate-900 px-2.5 py-1 text-xs font-mono text-slate-100 transition hover:border-brand/60 hover:bg-brand/10 hover:text-white"
+                                  title="Нажмите, чтобы скопировать время в буфер обмена"
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {copiedSlot && (
+                          <p className="text-xs text-emerald-300">
+                            Время {copiedSlot} скопировано. Вставьте его в нужное поле расписания.
+                          </p>
+                        )}
+                      </div>
+                    </Accordion>
+                  )}
+
+                  {freeRanges.length === 0 && suggestedSlots.length === 0 && (
+                    <div className="rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
+                      Свободных окон для новых публикаций не найдено с текущим интервалом.
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             <ChannelScheduleTable
               items={scheduleItems}

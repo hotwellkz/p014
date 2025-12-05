@@ -65,7 +65,8 @@ const ChannelScheduleTable = ({
           {toast.message}
         </div>
       )}
-      <div className="overflow-x-auto rounded-lg border border-white/10 bg-slate-900/50">
+      {/* Десктопная версия - таблица */}
+      <div className="hidden overflow-x-auto rounded-lg border border-white/10 bg-slate-900/50 md:block">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-white/10 bg-slate-800/50">
@@ -114,6 +115,29 @@ const ChannelScheduleTable = ({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Мобильная версия - карточки */}
+      <div className="space-y-3 md:hidden">
+        {items.map((item) => (
+          <ChannelScheduleRow
+            key={item.id}
+            item={item}
+            timeColumnsCount={timeColumnsCount}
+            conflicts={conflicts}
+            activeTime={activeTime}
+            animateActiveTime={animateActiveTime}
+            remainingSeconds={remainingSeconds}
+            minIntervalMinutes={minIntervalMinutes}
+            nextTime={nextTime}
+            previousTime={previousTime}
+            previousElapsedSeconds={previousElapsedSeconds}
+            onUpdate={handleUpdate}
+            onError={handleError}
+            onSuccess={handleSuccess}
+            isMobile={true}
+          />
+        ))}
       </div>
     </>
   );
